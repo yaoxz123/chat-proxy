@@ -1,9 +1,19 @@
 package com.chat.proxy.websocket;
 
 import com.chat.proxy.contant.Role;
+import com.chat.proxy.model.Chat;
 import com.chat.proxy.model.MessageRecord;
+import com.chat.proxy.model.OpenApiRequest;
+import com.chat.proxy.model.OpenApiResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -12,6 +22,8 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -85,14 +97,12 @@ public class ChatSocket {
         if (!message.equals("ping")) {
             System.out.println("【websocket消息】收到客户端发来的消息:" + message);
         }
-        String reMsg = "这是答复" + System.currentTimeMillis();
-        record(userId, message, reMsg);
 
-        /////test
-        MessageRecord messageRecord1 = messageRecord.get(userId);
-        System.out.println(messageRecord1);
+        MessageRecord recordHistory = storeUserRecord(userId, message);
+        Chat reChat = postOpenApiChat(recordHistory);
+        storeUserRecord(userId, reChat.getContent());
 
-        responseMessage(reMsg, session);
+        responseMessage(reChat.getContent(), session);
     }
 
     public void recordInit(String userId) {
@@ -103,13 +113,58 @@ public class ChatSocket {
         }
     }
 
-    public void record(String userId, String requestMsg, String responseMsg) {
+    public MessageRecord storeUserRecord(String userId, String Msg) {
         MessageRecord record = Optional.of(messageRecord.get(userId)).get();
-        if (StringUtils.hasLength(requestMsg)) {
-            record.addChat(Role.USER, requestMsg);
+        if (StringUtils.hasLength(Msg)) {
+            record.addChat(Role.USER, Msg);
         }
-        if (StringUtils.hasLength(responseMsg)) {
-            record.addChat(Role.ASSISTANT, responseMsg);
+        return record;
+    }
+    public MessageRecord storeAssistantRecord(String userId, String Msg) {
+        MessageRecord record = Optional.of(messageRecord.get(userId)).get();
+        if (StringUtils.hasLength(Msg)) {
+            record.addChat(Role.ASSISTANT, Msg);
         }
+        return record;
+    }
+
+    private Chat postOpenApiChat(MessageRecord record) {
+
+        //配置HTTP超时时间
+        HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
+        httpRequestFactory.setConnectionRequestTimeout(600000);
+        httpRequestFactory.setConnectTimeout(600000);
+        httpRequestFactory.setReadTimeout(600000);
+
+        RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
+
+        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
+        String url = "https://api.openai.com/v1/chat/completions";
+        //设置请求头参数
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Content-Type", "application/json");
+        httpHeaders.add("Authorization", "Bearer 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");
+
+        //设置body参数
+        OpenApiRequest req = new OpenApiRequest();
+        req.setMessages(record.getChatList());
+        req.setModel("gpt-3.5-turbo");
+        ObjectMapper mapper = new ObjectMapper();
+        String reqContent = "";
+        try {
+            reqContent = mapper.writeValueAsString(req);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        HttpEntity<String> httpEntity = new HttpEntity<>(reqContent, httpHeaders);
+
+        OpenApiResponse resp = new OpenApiResponse();
+        try {
+            resp = restTemplate.postForObject(url, httpEntity, OpenApiResponse.class);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return resp.getChoices().get(0).getMessage();
     }
 }
