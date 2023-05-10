@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -22,6 +23,8 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -130,11 +133,14 @@ public class ChatSocket {
 
     private Chat postOpenApiChat(MessageRecord record) {
 
+        //设置代理
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 1080));
+
         //配置HTTP超时时间
-        HttpComponentsClientHttpRequestFactory httpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-        httpRequestFactory.setConnectionRequestTimeout(600000);
+        SimpleClientHttpRequestFactory httpRequestFactory = new SimpleClientHttpRequestFactory();
         httpRequestFactory.setConnectTimeout(600000);
         httpRequestFactory.setReadTimeout(600000);
+        httpRequestFactory.setProxy(proxy);
 
         RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
 
@@ -143,7 +149,7 @@ public class ChatSocket {
         //设置请求头参数
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json");
-        httpHeaders.add("Authorization", "Bearer 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");
+        httpHeaders.add("Authorization", "Bearer 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");
 
         //设置body参数
         OpenApiRequest req = new OpenApiRequest();
