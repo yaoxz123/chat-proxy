@@ -149,7 +149,7 @@ public class ChatSocket {
         //设置请求头参数
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json");
-        httpHeaders.add("Authorization", "Bearer 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");
+        httpHeaders.add("Authorization", "Bearer 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");
 
         //设置body参数
         OpenApiRequest req = new OpenApiRequest();
