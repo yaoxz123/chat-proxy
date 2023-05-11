@@ -134,13 +134,13 @@ public class ChatSocket {
     private Chat postOpenApiChat(MessageRecord record) {
 
         //设置代理
-        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 1080));
+//        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", 58591));
 
         //配置HTTP超时时间
         SimpleClientHttpRequestFactory httpRequestFactory = new SimpleClientHttpRequestFactory();
         httpRequestFactory.setConnectTimeout(600000);
         httpRequestFactory.setReadTimeout(600000);
-        httpRequestFactory.setProxy(proxy);
+//        httpRequestFactory.setProxy(proxy);
 
         RestTemplate restTemplate = new RestTemplate(httpRequestFactory);
 
@@ -149,7 +149,7 @@ public class ChatSocket {
         //设置请求头参数
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json");
-        httpHeaders.add("Authorization", "Bearer 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");
+        httpHeaders.add("Authorization", "Bearer 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");
 
         //设置body参数
         OpenApiRequest req = new OpenApiRequest();
