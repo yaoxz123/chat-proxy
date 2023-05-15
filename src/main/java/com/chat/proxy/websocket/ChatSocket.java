@@ -146,10 +146,11 @@ public class ChatSocket {
 
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         String url = "https://api.openai.com/v1/chat/completions";
+        String apiKey = System.getenv("API_KEY");
         //设置请求头参数
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json");
-        httpHeaders.add("Authorization", "Bearer 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");
+        httpHeaders.add("Authorization", "Bearer "+apiKey);
 
         //设置body参数
         OpenApiRequest req = new OpenApiRequest();
